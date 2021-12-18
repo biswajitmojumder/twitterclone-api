@@ -2,19 +2,21 @@ package com.fattech.twitterclone.repos;
 
 import com.fattech.twitterclone.models.Player;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
 
 @Repository
-public class PlayerRepo implements EntityDAO<Player> {
+public class PlayerRepo implements EntityDAO<Player>, PlayerDAO {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,7 +28,14 @@ public class PlayerRepo implements EntityDAO<Player> {
     @Override
     public Long save(Player entity) {
         String INSERT_QUERY = "" +
-                "INSERT INTO tbl_players(\"userName\", \"fullName\", \"email\", \"password\", \"imageUrl\", \"createdAt\", \"lastModified\") " +
+                "INSERT INTO tbl_players(" +
+                "userName, " +
+                "fullName, " +
+                "email, " +
+                "password, " +
+                "imageUrl, " +
+                "createdAt, " +
+                "lastModified) " +
                 "VALUES(?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -43,20 +52,21 @@ public class PlayerRepo implements EntityDAO<Player> {
             return ps;
         }, keyHolder);
 
-        return (long) Objects.requireNonNull(keyHolder.getKeys()).get("id");
+        var key = (BigInteger) Objects.requireNonNull(keyHolder.getKeys()).get("GENERATED_KEY");
+        return key.longValue();
     }
 
     @Override
     public Long update(Player entity, Long id) {
         String UPDATE_QUERY = "" +
                 "UPDATE tbl_players " +
-                "SET \"userName\"=?, " +
-                "\"fullName\"=?, " +
-                "\"email\"=?, " +
-                "\"password\"=?, " +
-                "\"imageUrl\"=?, " +
-                "\"createdAt\"=?, " +
-                "\"lastModified\"=? WHERE id=?";
+                "SET userName=?, " +
+                "fullName=?, " +
+                "email=?, " +
+                "password=?, " +
+                "imageUrl=?, " +
+                "createdAt=?, " +
+                "lastModified=? WHERE id=?";
         jdbcTemplate.update(
                 UPDATE_QUERY,
                 entity.getUserName(),
@@ -79,11 +89,27 @@ public class PlayerRepo implements EntityDAO<Player> {
 
     @Override
     public List<Player> getAll() {
-        return jdbcTemplate.query("SELECT * FROM tbl_players", new BeanPropertyRowMapper<Player>(Player.class));
+        String SELECT_ALL_QUERY = "SELECT * FROM tbl_players";
+        return jdbcTemplate.query(SELECT_ALL_QUERY, new BeanPropertyRowMapper<>(Player.class));
     }
 
     @Override
     public Player getById(Long id) {
-        return jdbcTemplate.queryForObject("SELECT * FROM tbl_players WHERE id=?", new BeanPropertyRowMapper<Player>(Player.class), id);
+        String SELECT_ID_QUERY = "SELECT * FROM tbl_players WHERE id=?";
+        try {
+            return jdbcTemplate.queryForObject(SELECT_ID_QUERY, new BeanPropertyRowMapper<>(Player.class), id);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public Player getByUserName(String userName) {
+        String FIND_QUERY = "SELECT * FROM tbl_players WHERE userName=?";
+        try {
+            return jdbcTemplate.queryForObject(FIND_QUERY, new BeanPropertyRowMapper<>(Player.class), userName);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 }

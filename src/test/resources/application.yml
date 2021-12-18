@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/twitterclonedb
+    url: jdbc:mysql://localhost:3306/twitterclonetestdb
     username: root
     password: fatih0001
 
@@ -8,4 +8,4 @@ twitterclone:
   cloud:
     redis:
       host: localhost
-      port: 7001
+      port: 7002
