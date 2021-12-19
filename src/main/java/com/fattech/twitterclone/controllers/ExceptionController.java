@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Map;
 
@@ -17,7 +18,10 @@ public class ExceptionController {
         return throwFailure(e.getMessage());
     }
 
-    @ExceptionHandler(value = {MethodArgumentNotValidException.class})
+    @ExceptionHandler(value = {
+            MethodArgumentNotValidException.class,
+            MethodArgumentTypeMismatchException.class
+    })
     public ResponseEntity<Map<String, Object>> handleBadRequest(){
         return throwFailure(ErrorCodes.BAD_REQUEST.name());
     }
