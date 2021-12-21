@@ -9,7 +9,7 @@ public class TweetDraftDto {
     private String message;
 
     @NotNull
-    @Size(min = 1, max = 500)
+    @Size(max = 500)
     private String imageUrl;
 
     public TweetDraftDto() {

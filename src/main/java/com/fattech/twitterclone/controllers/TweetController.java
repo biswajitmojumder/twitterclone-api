@@ -1,6 +1,7 @@
 package com.fattech.twitterclone.controllers;
 
 import com.fattech.twitterclone.models.dtos.TweetDraftDto;
+import com.fattech.twitterclone.services.ReactionService;
 import com.fattech.twitterclone.services.TweetService;
 import com.fattech.twitterclone.utils.ResponseHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +15,13 @@ import java.util.Map;
 @RequestMapping("/api/tweet")
 public class TweetController {
     private final TweetService tweetService;
+    private final ReactionService reactionService;
 
     @Autowired
-    public TweetController(TweetService tweetService) {
+    public TweetController(TweetService tweetService,
+                           ReactionService reactionService) {
         this.tweetService = tweetService;
+        this.reactionService = reactionService;
     }
 
     @PostMapping("/post")
@@ -47,6 +51,20 @@ public class TweetController {
     public ResponseEntity<Map<String, Object>> retweetTweet(@PathVariable Long tweetId,
                                                             @RequestHeader("TK") String token) {
         var res = tweetService.retweetTweet(tweetId, token);
+        return ResponseHandler.wrapSuccessResponse(res);
+    }
+
+    @GetMapping("/like/{tweetId}")
+    public ResponseEntity<Map<String, Object>> likeTweet(@PathVariable Long tweetId,
+                                                         @RequestHeader("TK") String token) {
+        var res = reactionService.likeTweet(tweetId, token);
+        return ResponseHandler.wrapSuccessResponse(res);
+    }
+
+    @GetMapping("/bookmark/{tweetId}")
+    public ResponseEntity<Map<String, Object>> bookmarkTweet(@PathVariable Long tweetId,
+                                                             @RequestHeader("TK") String token) {
+        var res = reactionService.bookmarkTweet(tweetId, token);
         return ResponseHandler.wrapSuccessResponse(res);
     }
 }
