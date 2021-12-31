@@ -5,6 +5,7 @@ public class PlayerGetDto {
     private String userName;
     private String fullName;
     private String email;
+    private String imageUrl;
 
     public PlayerGetDto() {
     }
@@ -12,11 +13,21 @@ public class PlayerGetDto {
     public PlayerGetDto(Long id,
                         String userName,
                         String fullName,
-                        String email) {
+                        String email,
+                        String imageUrl) {
         this.id = id;
         this.userName = userName;
         this.fullName = fullName;
         this.email = email;
+        this.imageUrl = imageUrl;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public Long getId() {

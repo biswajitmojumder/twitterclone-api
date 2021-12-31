@@ -1,6 +1,8 @@
 package com.fattech.twitterclone.repos;
 
 import com.fattech.twitterclone.models.Follow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -12,12 +14,15 @@ import org.springframework.stereotype.Repository;
 import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 @Repository
 public class FollowRepo implements EntityDAO<Follow>, FollowDAO {
     private final JdbcTemplate jdbcTemplate;
+
+    Logger logger = LoggerFactory.getLogger(FollowRepo.class);
 
     @Autowired
     public FollowRepo(JdbcTemplate jdbcTemplate) {
@@ -98,5 +103,26 @@ public class FollowRepo implements EntityDAO<Follow>, FollowDAO {
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+
+    @Override
+    public List<Follow> getByFollowerId(Long followerId) {
+        String GET_QUERY = "SELECT * FROM tbl_follows WHERE followerId=?";
+        return jdbcTemplate.query(GET_QUERY, new BeanPropertyRowMapper<>(Follow.class), followerId);
+    }
+
+    @Override
+    public List<Follow> getByPlayerIdsFollowerId(List<Long> playerIds,
+                                                 Long followerId) {
+        if (playerIds.isEmpty()) {
+            logger.info("playerIds is empty, will return Collections.emptyList!");
+            return Collections.emptyList();
+        }
+        String IN_SQL = String.join(",", Collections.nCopies(playerIds.size(), "?"));
+        return jdbcTemplate.query(
+                String.format("SELECT * FROM tbl_follows WHERE playerId IN (%s) AND followerId=%d", IN_SQL, followerId),
+                new BeanPropertyRowMapper<>(Follow.class),
+                playerIds.toArray()
+        );
     }
 }

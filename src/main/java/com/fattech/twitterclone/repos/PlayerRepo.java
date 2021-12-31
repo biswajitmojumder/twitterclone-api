@@ -1,6 +1,8 @@
 package com.fattech.twitterclone.repos;
 
 import com.fattech.twitterclone.models.Player;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,6 +22,8 @@ import java.util.Objects;
 public class PlayerRepo implements EntityDAO<Player>, PlayerDAO {
 
     private final JdbcTemplate jdbcTemplate;
+
+    Logger logger = LoggerFactory.getLogger(PlayerRepo.class);
 
     @Autowired
     public PlayerRepo(JdbcTemplate jdbcTemplate) {
@@ -111,5 +116,19 @@ public class PlayerRepo implements EntityDAO<Player>, PlayerDAO {
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+
+    @Override
+    public List<Player> getByPlayerIds(List<Long> playerIds) {
+        if (playerIds.isEmpty()) {
+            logger.info("PlayerIds is empty, will return Collections.emptyList!");
+            return Collections.emptyList();
+        }
+        String IN_SQL = String.join(",", Collections.nCopies(playerIds.size(), "?"));
+        return jdbcTemplate.query(
+                String.format("SELECT * FROM tbl_players WHERE id IN (%s)", IN_SQL),
+                new BeanPropertyRowMapper<>(Player.class),
+                playerIds.toArray()
+        );
     }
 }

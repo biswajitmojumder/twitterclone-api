@@ -1,6 +1,8 @@
 package com.fattech.twitterclone.repos;
 
 import com.fattech.twitterclone.models.Tweet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -12,12 +14,15 @@ import org.springframework.stereotype.Repository;
 import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 @Repository
-public class TweetRepo implements EntityDAO<Tweet>{
+public class TweetRepo implements EntityDAO<Tweet>, TweetDAO {
     private final JdbcTemplate jdbcTemplate;
+
+    Logger logger = LoggerFactory.getLogger(TweetRepo.class);
 
     @Autowired
     public TweetRepo(JdbcTemplate jdbcTemplate) {
@@ -101,5 +106,40 @@ public class TweetRepo implements EntityDAO<Tweet>{
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+
+    @Override
+    public List<Tweet> getLimitedByPlayerIdsOlderThan(Long limit,
+                                                      List<Long> playerIds,
+                                                      Long olderThan) {
+        String IN_SQL = String.join(",", Collections.nCopies(playerIds.size(), "?"));
+        return jdbcTemplate.query(
+                String.format("SELECT * FROM tbl_tweets WHERE playerId IN (%s) AND createdAt<=%d ORDER BY createdAt DESC LIMIT %d", IN_SQL, olderThan, limit),
+                new BeanPropertyRowMapper<>(Tweet.class),
+                playerIds.toArray()
+        );
+    }
+
+    @Override
+    public List<Tweet> getByTweetIds(List<Long> tweetIds) {
+        if (tweetIds.isEmpty()) {
+            logger.info("tweetIds is empty, will return Collections.emptyList!");
+            return Collections.emptyList();
+        }
+        String IN_SQL = String.join(",", Collections.nCopies(tweetIds.size(), "?"));
+        return jdbcTemplate.query(
+                String.format("SELECT * FROM tbl_tweets WHERE id IN (%s)", IN_SQL),
+                new BeanPropertyRowMapper<>(Tweet.class),
+                tweetIds.toArray()
+        );
+    }
+
+    @Override
+    public List<Tweet> getLimitedLatest(Long limit, Long time) {
+        String QUERY = String.format("SELECT * FROM tbl_tweets WHERE createdAt<=%d ORDER BY createdAt DESC LIMIT %d", time, limit);
+        return jdbcTemplate.query(
+                QUERY,
+                new BeanPropertyRowMapper<>(Tweet.class)
+        );
     }
 }

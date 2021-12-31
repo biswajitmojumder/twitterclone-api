@@ -1,6 +1,8 @@
 package com.fattech.twitterclone.repos;
 
 import com.fattech.twitterclone.models.Reaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -12,12 +14,15 @@ import org.springframework.stereotype.Repository;
 import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 @Repository
 public class ReactionRepo implements EntityDAO<Reaction>, ReactionDAO {
     private final JdbcTemplate jdbcTemplate;
+
+    Logger logger = LoggerFactory.getLogger(ReactionRepo.class);
 
     @Autowired
     public ReactionRepo(JdbcTemplate jdbcTemplate) {
@@ -109,5 +114,19 @@ public class ReactionRepo implements EntityDAO<Reaction>, ReactionDAO {
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+
+    @Override
+    public List<Reaction> getByTweetIdsPlayerId(List<Long> tweetIds, Long playerId) {
+        if (tweetIds.isEmpty()) {
+            logger.info("TweetIds is empty, will return Collections.emptyList!");
+            return Collections.emptyList();
+        }
+        String IN_SQL = String.join(",", Collections.nCopies(tweetIds.size(), "?"));
+        return jdbcTemplate.query(
+                String.format("SELECT * FROM tbl_reactions WHERE tweetId IN (%s) AND playerId=%d", IN_SQL, playerId),
+                new BeanPropertyRowMapper<>(Reaction.class),
+                tweetIds.toArray()
+        );
     }
 }
