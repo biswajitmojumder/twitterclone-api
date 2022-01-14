@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -56,55 +55,6 @@ public class PageService {
     }
 
     public Payload getExplore(Long time, String token) {
-//        Long playerId = Long.valueOf(accessTokenUtils.extractPlayerId(token));
-//
-//        Long limit = 20L;
-//        List<Tweet> exploreTweet = tweetRepo.getLimitedLatest(limit, time);
-//        List<Long> tweetIds = exploreTweet.stream().map(BaseModel::getId).collect(Collectors.toList());
-//
-//        List<Long> repliedRetweetIds = exploreTweet
-//                .stream()
-//                .filter(s -> (!s.getReplyOf().equals(0L) || !s.getRetweetOf().equals(0L)))
-//                .map(s -> {
-//                    if (!s.getReplyOf().equals(0L)) {
-//                        return s.getReplyOf();
-//                    } else {
-//                        return s.getRetweetOf();
-//                    }
-//                }).collect(Collectors.toList());
-//
-//        List<Tweet> repliesRetweets = tweetRepo.getByTweetIds(repliedRetweetIds);
-//        exploreTweet.addAll(repliesRetweets);
-//
-//        tweetIds.addAll(repliedRetweetIds);
-//
-//        List<Long> playerIds = exploreTweet.stream().map(Tweet::getPlayerId).collect(Collectors.toList());
-//        List<Player> players = playerRepo.getByPlayerIds(playerIds);
-//
-//        List<Long> repliesRetweetsPlayers = repliesRetweets
-//                .stream()
-//                .map(Tweet::getPlayerId)
-//                .collect(Collectors.toList());
-//
-//        List<Player> repliesPlayers = playerRepo.getByPlayerIds(repliesRetweetsPlayers);
-//        players.addAll(repliesPlayers);
-//
-//        List<Reaction> tweetReactions = reactionRepo.getByTweetIdsPlayerId(tweetIds, playerId);
-//
-//        Payload payload = new Payload();
-//        payload.setFollows(null);
-//        payload.setReactions(tweetReactions.stream().collect(Collectors.toMap(Reaction::getTweetId, Function.identity())));
-//        payload.setTweets(exploreTweet.stream().collect(Collectors.toMap(
-//                Tweet::getId,
-//                Function.identity(),
-//                (t1, t2) -> t1
-//        )));
-//        payload.setPlayers(players.stream().collect(Collectors.toMap(
-//                Player::getId,
-//                s -> objectMapper.convertValue(s, PlayerGetDto.class),
-//                (p1, p2) -> p1
-//        )));
-
         return null;
     }
 
@@ -118,29 +68,13 @@ public class PageService {
         Long playerId = Long.valueOf(accessTokenUtils.extractPlayerId(token));
 
         // get followings + self playerId
-        List<Follow> followings = followRepo.getByFollowerId(playerId);
-        List<Long> followingIds = followings.stream().map(Follow::getPlayerId).collect(Collectors.toList());
-        followingIds.add(playerId);
+        List<Long> followingIds = followRepo.getHomeFollowingPlayerIds(playerId);
 
         // get tweet latest
         Long resultLimit = 20L;
-        // get latest tweets
-        List<Tweet> latestFollowingTweets = tweetRepo.getLimitedByPlayerIdsOlderThan(resultLimit, followingIds, time);
-        // get latest's replies/retweets
-        List<Long> repliedRetweetedIds = latestFollowingTweets
-                .stream()
-                .filter(s -> (!s.getReplyOf().equals(0L) || !s.getRetweetOf().equals(0L)))
-                .map(s -> {
-                    if (!s.getReplyOf().equals(0L)) {
-                        return s.getReplyOf();
-                    } else {
-                        return s.getRetweetOf();
-                    }
-                }).collect(Collectors.toList());
-        List<Tweet> repliesRetweets = tweetRepo.getByTweetIds(repliedRetweetedIds);
-        List<Tweet> tweetsPlaceHolder = new ArrayList<>(latestFollowingTweets);
-        tweetsPlaceHolder.addAll(repliesRetweets);
-        List<TweetGetDto> returnTweets = tweetsPlaceHolder.stream().map(tweet -> {
+        List<Tweet> homeTweets = tweetRepo.getLimitedHomeTweets(resultLimit, followingIds, time);
+
+        List<TweetGetDto> returnTweets = homeTweets.stream().map(tweet -> {
             TweetGetDto tweetGetDto = objectMapper.convertValue(tweet, TweetGetDto.class);
             List<String> tweetTags = tagRepo.getTagNamesByTweetId(tweet.getId());
             tweetGetDto.setTags(tweetTags);
@@ -165,12 +99,9 @@ public class PageService {
         ));
 
         // get players from all tweets
-        List<Long> tweetsPlayerIds = tweetsPlaceHolder.stream().map(Tweet::getPlayerId).collect(Collectors.toList());
-        List<PlayerGetDto> playersFromTweets = playerRepo
-                .getByPlayerIds(tweetsPlayerIds)
-                .stream()
-                .map(s-> objectMapper.convertValue(s, PlayerGetDto.class))
-                .collect(Collectors.toList());
+        List<Long> tweetsPlayerIds = homeTweets.stream().map(Tweet::getPlayerId).collect(Collectors.toList());
+        tweetsPlayerIds.add(playerId);
+        List<PlayerGetDto> playersFromTweets = playerRepo.getByPlayerIds(tweetsPlayerIds);
         Map<Long, PlayerGetDto> players = playersFromTweets.stream().collect(Collectors.toMap(
                 PlayerGetDto::getId,
                 Function.identity(),

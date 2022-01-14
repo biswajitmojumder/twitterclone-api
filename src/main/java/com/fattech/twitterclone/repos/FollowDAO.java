@@ -10,4 +10,6 @@ public interface FollowDAO {
     List<Follow> getByFollowerId(Long followerId);
 
     List<Follow> getByPlayerIdsFollowerId(List<Long> playerIds, Long followerId);
+
+    List<Long> getHomeFollowingPlayerIds(Long playerId);
 }

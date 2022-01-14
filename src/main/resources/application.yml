@@ -9,3 +9,11 @@ twitterclone:
     redis:
       host: localhost
       port: 7001
+
+logging:
+  level:
+    org:
+      springframework:
+        boot:
+          autoconfigure:
+            security: WARN

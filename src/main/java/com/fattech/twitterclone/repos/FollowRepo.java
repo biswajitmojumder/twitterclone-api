@@ -125,4 +125,10 @@ public class FollowRepo implements EntityDAO<Follow>, FollowDAO {
                 playerIds.toArray()
         );
     }
+
+    @Override
+    public List<Long> getHomeFollowingPlayerIds(Long playerId) {
+        String SQL_QUERY = String.format("SELECT playerId FROM tbl_follows WHERE followerId=%d UNION SELECT %d AS playerId", playerId, playerId);
+        return jdbcTemplate.queryForList(SQL_QUERY, Long.class);
+    }
 }

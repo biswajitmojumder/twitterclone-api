@@ -1,6 +1,7 @@
 package com.fattech.twitterclone.repos;
 
 import com.fattech.twitterclone.models.Player;
+import com.fattech.twitterclone.models.dtos.PlayerGetDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,16 +120,15 @@ public class PlayerRepo implements EntityDAO<Player>, PlayerDAO {
     }
 
     @Override
-    public List<Player> getByPlayerIds(List<Long> playerIds) {
+    public List<PlayerGetDto> getByPlayerIds(List<Long> playerIds) {
         if (playerIds.isEmpty()) {
             logger.info("PlayerIds is empty, will return Collections.emptyList!");
             return Collections.emptyList();
         }
-        String IN_SQL = String.join(",", Collections.nCopies(playerIds.size(), "?"));
+        String In_PLAYERIDS_SQL = playerIds.toString().substring(1, playerIds.toString().length()-1);
         return jdbcTemplate.query(
-                String.format("SELECT * FROM tbl_players WHERE id IN (%s)", IN_SQL),
-                new BeanPropertyRowMapper<>(Player.class),
-                playerIds.toArray()
+                String.format("SELECT * FROM tbl_players WHERE id IN (%s)", In_PLAYERIDS_SQL),
+                new BeanPropertyRowMapper<>(PlayerGetDto.class)
         );
     }
 }

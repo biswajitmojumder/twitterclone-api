@@ -142,4 +142,20 @@ public class TweetRepo implements EntityDAO<Tweet>, TweetDAO {
                 new BeanPropertyRowMapper<>(Tweet.class)
         );
     }
+
+    @Override
+    public List<Tweet> getLimitedHomeTweets(Long limit, List<Long> playerIds, Long olderThan) {
+        String IN_PLAYERIDS_SQL = playerIds.toString().substring(1, playerIds.toString().length() - 1);
+        String QUERY = String.format("WITH repliedRetweetedTweetIds  AS (" +
+                        "WITH latestFollowingTweets  AS (" +
+                        "SELECT replyOf, retweetOf FROM tbl_tweets WHERE playerId IN (%s) AND createdAt<=%d ORDER BY createdAt DESC LIMIT %d" +
+                        ") SELECT replyOf AS id FROM latestFollowingTweets WHERE replyOf != 0 UNION SELECT retweetOf AS id FROM latestFollowingTweets WHERE retweetOf != 0" +
+                        ") SELECT * FROM tbl_tweets WHERE tbl_tweets.id IN (SELECT id FROM repliedRetweetedTweetIds) UNION " +
+                        "SELECT * FROM tbl_tweets WHERE playerId IN (%s) AND createdAt<=%d ORDER BY createdAt DESC LIMIT %d;",
+                IN_PLAYERIDS_SQL, olderThan, limit, IN_PLAYERIDS_SQL, olderThan, limit);
+        return jdbcTemplate.query(
+                QUERY,
+                new BeanPropertyRowMapper<>(Tweet.class)
+        );
+    }
 }

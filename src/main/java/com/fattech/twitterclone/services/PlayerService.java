@@ -3,10 +3,7 @@ package com.fattech.twitterclone.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fattech.twitterclone.constants.ErrorCodes;
 import com.fattech.twitterclone.models.Player;
-import com.fattech.twitterclone.models.dtos.PlayerGetDto;
-import com.fattech.twitterclone.models.dtos.PlayerLoginDto;
-import com.fattech.twitterclone.models.dtos.PlayerSignupDto;
-import com.fattech.twitterclone.models.dtos.PlayerUpdateDto;
+import com.fattech.twitterclone.models.dtos.*;
 import com.fattech.twitterclone.repos.AccessTokenRedisRepo;
 import com.fattech.twitterclone.repos.PlayerRepo;
 import com.fattech.twitterclone.utils.AccessTokenUtils;
@@ -54,7 +51,7 @@ public class PlayerService {
         return objectMapper.convertValue(savedPlayer, PlayerGetDto.class);
     }
 
-    public String login(PlayerLoginDto playerLoginDto) {
+    public LoginResponseDto login(PlayerLoginDto playerLoginDto) {
         var userName = playerLoginDto.getUserName();
         Player foundPlayer = playerRepo.getByUserName(userName);
         if (Objects.isNull(foundPlayer)) {
@@ -68,7 +65,7 @@ public class PlayerService {
                 var playerId = foundPlayer.getId();
                 var token = accessTokenUtils.getToken(playerId);
                 accessTokenRedisRepo.saveByPlayerId(playerId, token);
-                return token;
+                return new LoginResponseDto(token, playerId);
             } else {
                 throw new AppException(ErrorCodes.INVALID_CREDENTIALS);
             }
