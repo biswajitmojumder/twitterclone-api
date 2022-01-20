@@ -12,4 +12,6 @@ public interface TweetDAO {
     List<Tweet> getLimitedLatest(Long limit, Long time);
 
     List<Tweet> getLimitedHomeTweets(Long limit, List<Long> playerIds, Long olderThan);
+
+    List<Long> getTweetIdsLimitedHomeTweets(Long limit, List<Long> playerIds, Long olderThan);
 }

@@ -5,23 +5,34 @@ import com.fattech.twitterclone.models.dtos.TweetGetDto;
 
 import java.util.Map;
 
-public class Payload {
+public class ResponsePayload {
     private Map<Long, TweetGetDto> tweets;
     private Map<Long, Reaction> reactions;
     private Map<Long, PlayerGetDto> players;
     private Map<Long, Follow> follows;
+    private Map<Long, Boolean> feedIds;
 
-    public Payload() {
+    public ResponsePayload() {
     }
 
-    public Payload(Map<Long, TweetGetDto> tweets,
-                   Map<Long, Reaction> reactions,
-                   Map<Long, PlayerGetDto> players,
-                   Map<Long, Follow> follows) {
+    public ResponsePayload(Map<Long, TweetGetDto> tweets,
+                           Map<Long, Reaction> reactions,
+                           Map<Long, PlayerGetDto> players,
+                           Map<Long, Follow> follows,
+                           Map<Long, Boolean> feedIds) {
         this.tweets = tweets;
         this.reactions = reactions;
         this.players = players;
         this.follows = follows;
+        this.feedIds = feedIds;
+    }
+
+    public Map<Long, Boolean> getFeedIds() {
+        return feedIds;
+    }
+
+    public void setFeedIds(Map<Long, Boolean> feedIds) {
+        this.feedIds = feedIds;
     }
 
     public Map<Long, Follow> getFollows() {

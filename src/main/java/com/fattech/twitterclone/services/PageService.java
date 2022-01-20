@@ -49,21 +49,21 @@ public class PageService {
         this.tagRepo = tagRepo;
     }
 
-    public Payload getExploreLatest(String token) {
+    public ResponsePayload getExploreLatest(String token) {
         final Long now = dateTimeUtils.getUnixNow();
         return getExplore(now, token);
     }
 
-    public Payload getExplore(Long time, String token) {
+    public ResponsePayload getExplore(Long time, String token) {
         return null;
     }
 
-    public Payload getLatestHomeData(String token) {
+    public ResponsePayload getLatestHomeData(String token) {
         final Long now = dateTimeUtils.getUnixNow();
         return getHomeData(token, now);
     }
 
-    public Payload getHomeData(String token, Long time) {
+    public ResponsePayload getHomeData(String token, Long time) {
         // get requester playerId
         Long playerId = Long.valueOf(accessTokenUtils.extractPlayerId(token));
 
@@ -73,6 +73,13 @@ public class PageService {
         // get tweet latest
         Long resultLimit = 20L;
         List<Tweet> homeTweets = tweetRepo.getLimitedHomeTweets(resultLimit, followingIds, time);
+
+        // get home feed tweetIds
+        List<Long> feedTweetIds = tweetRepo.getTweetIdsLimitedHomeTweets(resultLimit, followingIds, time);
+        Map<Long, Boolean> feedTwtIds = feedTweetIds.stream().collect(Collectors.toMap(
+                Function.identity(),
+                s -> true
+        ));
 
         List<TweetGetDto> returnTweets = homeTweets.stream().map(tweet -> {
             TweetGetDto tweetGetDto = objectMapper.convertValue(tweet, TweetGetDto.class);
@@ -93,7 +100,7 @@ public class PageService {
                 .collect(Collectors.toList());
         List<Reaction> reactionsList = reactionRepo.getByTweetIdsPlayerId(tweetIds, playerId);
         Map<Long, Reaction> reactions = reactionsList.stream().collect(Collectors.toMap(
-                Reaction::getTweetId,
+                Reaction::getId,
                 Function.identity(),
                 (r1, r2) -> r1
         ));
@@ -117,6 +124,6 @@ public class PageService {
                         (f1, f2) -> f1
                 ));
 
-        return new Payload(tweets, reactions, players, follows);
+        return new ResponsePayload(tweets, reactions, players, follows, feedTwtIds);
     }
 }
