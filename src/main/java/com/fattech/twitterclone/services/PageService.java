@@ -27,6 +27,7 @@ public class PageService {
     private final ReactionRepo reactionRepo;
     private final ObjectMapper objectMapper;
     private final TagRepo tagRepo;
+    private final CacheableQueryService cacheableQueryService;
 
     Logger logger = LoggerFactory.getLogger(PageService.class);
 
@@ -38,7 +39,8 @@ public class PageService {
                        PlayerRepo playerRepo,
                        ReactionRepo reactionRepo,
                        ObjectMapper objectMapper,
-                       TagRepo tagRepo) {
+                       TagRepo tagRepo,
+                       CacheableQueryService cacheableQueryService) {
         this.followRepo = followRepo;
         this.accessTokenUtils = accessTokenUtils;
         this.tweetRepo = tweetRepo;
@@ -47,6 +49,7 @@ public class PageService {
         this.reactionRepo = reactionRepo;
         this.objectMapper = objectMapper;
         this.tagRepo = tagRepo;
+        this.cacheableQueryService = cacheableQueryService;
     }
 
     public ResponsePayload getExploreLatest(String token) {
@@ -68,7 +71,7 @@ public class PageService {
         Long playerId = Long.valueOf(accessTokenUtils.extractPlayerId(token));
 
         // get followings + self playerId
-        List<Long> followingIds = followRepo.getHomeFollowingPlayerIds(playerId);
+        List<Long> followingIds = cacheableQueryService.getHomeFollowingPlayerIds(playerId);
 
         // get tweet latest
         Long resultLimit = 20L;

@@ -2,15 +2,14 @@ package com.fattech.twitterclone.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fattech.twitterclone.constants.ErrorCodes;
+import com.fattech.twitterclone.constants.PusherEventNames;
 import com.fattech.twitterclone.models.Tag;
 import com.fattech.twitterclone.models.Tweet;
 import com.fattech.twitterclone.models.dtos.TweetDraftDto;
 import com.fattech.twitterclone.models.dtos.TweetGetDto;
 import com.fattech.twitterclone.repos.TagRepo;
 import com.fattech.twitterclone.repos.TweetRepo;
-import com.fattech.twitterclone.utils.AccessTokenUtils;
-import com.fattech.twitterclone.utils.AppException;
-import com.fattech.twitterclone.utils.DateTimeUtils;
+import com.fattech.twitterclone.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +25,9 @@ public class TweetService {
     private final ObjectMapper objectMapper;
     private final DateTimeUtils dateTimeUtils;
     private final AccessTokenUtils accessTokenUtils;
+    private final PusherUtils pusherUtils;
+    private final AppChannelsUtils appChannelsUtils;
+    private final CacheableQueryService cacheableQueryService;
 
     Logger logger = LoggerFactory.getLogger(TweetService.class);
 
@@ -34,12 +36,18 @@ public class TweetService {
                         TagRepo tagRepo,
                         ObjectMapper objectMapper,
                         DateTimeUtils dateTimeUtils,
-                        AccessTokenUtils accessTokenUtils) {
+                        AccessTokenUtils accessTokenUtils,
+                        PusherUtils pusherUtils,
+                        AppChannelsUtils appChannelsUtils,
+                        CacheableQueryService cacheableQueryService) {
         this.tweetRepo = tweetRepo;
         this.tagRepo = tagRepo;
         this.objectMapper = objectMapper;
         this.dateTimeUtils = dateTimeUtils;
         this.accessTokenUtils = accessTokenUtils;
+        this.pusherUtils = pusherUtils;
+        this.appChannelsUtils = appChannelsUtils;
+        this.cacheableQueryService = cacheableQueryService;
     }
 
     public TweetGetDto postNewTweet(TweetDraftDto tweetDraftDto, String token) {
@@ -57,6 +65,8 @@ public class TweetService {
         var savedTweet = tweetRepo.getById(generatedId);
         var returnTweet = objectMapper.convertValue(savedTweet, TweetGetDto.class);
         returnTweet.setTags(tags);
+
+        incrementFollowersHomePageFeedNtf(playerId);
 
         return returnTweet;
     }
@@ -152,6 +162,8 @@ public class TweetService {
             tweetsList.put(generatedId, returnReply);
             tweetsList.put(repliedTweetId, targetTweet);
 
+            incrementFollowersHomePageFeedNtf(playerId);
+
             return tweetsList;
         }
         logger.warn("Target tweet for reply doesn't exist. Will throw Bad Request Exception");
@@ -186,9 +198,18 @@ public class TweetService {
             tweetsList.put(retweetedTweetId, targetTweet);
             tweetsList.put(generatedId, returnRetweet);
 
+            incrementFollowersHomePageFeedNtf(playerId);
+
             return tweetsList;
         }
         logger.warn("Target tweet to be retweeted doesn't exist. Will throw Bad Request Exception");
         throw new AppException(ErrorCodes.BAD_REQUEST);
+    }
+
+    private void incrementFollowersHomePageFeedNtf(Long playerId) {
+        List<Long> followerIds = cacheableQueryService.getPlayerFollowerIds(playerId);
+        var followerChannels = appChannelsUtils.getPlayerHomeChannels(followerIds);
+        final Long recordedTime = dateTimeUtils.getUnixNow();
+        pusherUtils.pushToMany(followerChannels, PusherEventNames.INC_HOME_FEED_NTF, recordedTime);
     }
 }

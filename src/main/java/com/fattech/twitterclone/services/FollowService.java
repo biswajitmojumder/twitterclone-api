@@ -21,6 +21,7 @@ public class FollowService {
     private final PlayerRepo playerRepo;
     private final AccessTokenUtils accessTokenUtils;
     private final DateTimeUtils dateTimeUtils;
+    private final CacheableQueryService cacheableQueryService;
 
     Logger logger = LoggerFactory.getLogger(FollowService.class);
 
@@ -28,11 +29,13 @@ public class FollowService {
     public FollowService(FollowRepo followRepo,
                          PlayerRepo playerRepo,
                          AccessTokenUtils accessTokenUtils,
-                         DateTimeUtils dateTimeUtils) {
+                         DateTimeUtils dateTimeUtils,
+                         CacheableQueryService cacheableQueryService) {
         this.followRepo = followRepo;
         this.playerRepo = playerRepo;
         this.accessTokenUtils = accessTokenUtils;
         this.dateTimeUtils = dateTimeUtils;
+        this.cacheableQueryService = cacheableQueryService;
     }
 
     public Follow followPlayer(Long targetPlayerId, String token) {
@@ -49,6 +52,7 @@ public class FollowService {
                 follow.setLastModified(now);
 
                 Long generatedId = followRepo.save(follow);
+                cacheableQueryService.updateHomeFollowingPlayerIds(playerId, targetPlayerId);
                 return followRepo.getById(generatedId);
             }
             logger.warn("Already following, will throw bad req!");
@@ -64,6 +68,7 @@ public class FollowService {
             Long playerId = Long.valueOf(accessTokenUtils.extractPlayerId(token));
             Follow foundFollow = followRepo.getByPlayerIdFollowerId(targetPlayerId, playerId);
             if (!Objects.isNull(foundFollow)) {
+                cacheableQueryService.forceDbQueryGetHomeFollowingPlayerIds(playerId);
                 return followRepo.delete(foundFollow.getId());
             }
             logger.warn("Follow object with playerId " + targetPlayerId + " & followerId " + playerId + " doesn't exist");

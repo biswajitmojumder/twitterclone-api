@@ -1,3 +1,6 @@
+server:
+  port: 8080
+
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/twitterclonedb
@@ -9,6 +12,11 @@ twitterclone:
     redis:
       host: localhost
       port: 7001
+  pusher:
+    appId: 1275062
+    key: a42cb9c7c355c51291ea
+    secret: 5b57edf9ab56aac383a0
+    cluster: ap1
 
 logging:
   level:
