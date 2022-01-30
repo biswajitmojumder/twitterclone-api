@@ -131,4 +131,10 @@ public class FollowRepo implements EntityDAO<Follow>, FollowDAO {
         String SQL_QUERY = String.format("SELECT playerId FROM tbl_follows WHERE followerId=%d UNION SELECT %d AS playerId", playerId, playerId);
         return jdbcTemplate.queryForList(SQL_QUERY, Long.class);
     }
+
+    @Override
+    public List<Long> getFollowerIdsByPlayerId(Long playerId) {
+        String SQL = String.format("SELECT followerId FROM tbl_follows WHERE playerId=%d", playerId);
+        return jdbcTemplate.queryForList(SQL, Long.class);
+    }
 }
