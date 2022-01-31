@@ -30,4 +30,10 @@ public class HomeController {
         var res = pageService.getHomeData(token, time);
         return ResponseHandler.wrapSuccessResponse(res);
     }
+
+    @GetMapping("/getRecommendedFollows")
+    public ResponseEntity<Map<String, Object>> getRecommendedFollows(@RequestHeader("TK") String token) {
+        var res = pageService.getRecommendedPlayers(token);
+        return ResponseHandler.wrapSuccessResponse(res);
+    }
 }
