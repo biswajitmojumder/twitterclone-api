@@ -9,4 +9,6 @@ public interface PlayerDAO {
     Player getByUserName(String userName);
 
     List<PlayerGetDto> getByPlayerIds(List<Long> playerIds);
+
+    List<PlayerGetDto> getRecommendedPlayers(Long playerId);
 }

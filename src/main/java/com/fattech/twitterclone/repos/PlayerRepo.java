@@ -131,4 +131,17 @@ public class PlayerRepo implements EntityDAO<Player>, PlayerDAO {
                 new BeanPropertyRowMapper<>(PlayerGetDto.class)
         );
     }
+
+    @Override
+    public List<PlayerGetDto> getRecommendedPlayers(Long playerId) {
+        String SQL = String.format("WITH recommendedPlayerIds AS (WITH followingIds AS (SELECT DISTINCT playerId FROM tbl_follows WHERE followerId IN (%d)),\n" +
+                "followerIds AS (SELECT DISTINCT followerId FROM tbl_follows WHERE playerId IN (%d))\n" +
+                "SELECT followerId AS playerId FROM followerIds WHERE followerId NOT IN (SELECT playerId FROM followingIds) UNION (\n" +
+                "\tSELECT DISTINCT playerId FROM tbl_follows WHERE followerId IN (SELECT followerId FROM followerIds)\n" +
+                ")) SELECT id, userName, fullName, email, imageUrl FROM tbl_players WHERE id IN (SELECT DISTINCT playerId FROM recommendedPlayerIds) AND id != %d LIMIT 20", playerId, playerId, playerId);
+        return jdbcTemplate.query(
+                SQL,
+                new BeanPropertyRowMapper<>(PlayerGetDto.class)
+        );
+    }
 }

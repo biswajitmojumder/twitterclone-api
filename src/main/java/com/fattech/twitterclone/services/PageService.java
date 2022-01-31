@@ -129,4 +129,16 @@ public class PageService {
 
         return new ResponsePayload(tweets, reactions, players, follows, feedTwtIds);
     }
+
+    public ResponsePayload getRecommendedPlayers(String token) {
+        Long playerId = Long.valueOf(accessTokenUtils.extractPlayerId(token));
+        List<PlayerGetDto> recommendedPlayers = playerRepo.getRecommendedPlayers(playerId);
+        Map<Long, PlayerGetDto> playersMap = recommendedPlayers.stream().collect(Collectors.toMap(
+                PlayerGetDto::getId,
+                Function.identity()
+        ));
+        var result = new ResponsePayload();
+        result.setPlayers(playersMap);
+        return result;
+    }
 }
