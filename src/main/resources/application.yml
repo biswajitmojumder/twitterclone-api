@@ -3,9 +3,14 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/twitterclonedb
+    url: jdbc:mysql://localhost:3306/twitterdb?createDatabaseIfNotExist=true
     username: root
     password: fatih0001
+
+flyway:
+  url: jdbc:mysql://localhost:3306/twitterdb?createDatabaseIfNotExist=true
+  user: root
+  password: fatih0001
 
 twitterclone:
   cloud:
