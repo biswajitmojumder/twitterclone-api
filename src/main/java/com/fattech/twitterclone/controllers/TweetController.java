@@ -1,6 +1,7 @@
 package com.fattech.twitterclone.controllers;
 
 import com.fattech.twitterclone.models.dtos.TweetDraftDto;
+import com.fattech.twitterclone.services.PageService;
 import com.fattech.twitterclone.services.ReactionService;
 import com.fattech.twitterclone.services.TweetService;
 import com.fattech.twitterclone.utils.ResponseHandler;
@@ -16,12 +17,15 @@ import java.util.Map;
 public class TweetController {
     private final TweetService tweetService;
     private final ReactionService reactionService;
+    private final PageService pageService;
 
     @Autowired
     public TweetController(TweetService tweetService,
-                           ReactionService reactionService) {
+                           ReactionService reactionService,
+                           PageService pageService) {
         this.tweetService = tweetService;
         this.reactionService = reactionService;
+        this.pageService = pageService;
     }
 
     @PostMapping("/post")
@@ -65,6 +69,13 @@ public class TweetController {
     public ResponseEntity<Map<String, Object>> bookmarkTweet(@PathVariable Long tweetId,
                                                              @RequestHeader("TK") String token) {
         var res = reactionService.bookmarkTweet(tweetId, token);
+        return ResponseHandler.wrapSuccessResponse(res);
+    }
+
+    @GetMapping("/supertweet/{tweetId}")
+    public ResponseEntity<Map<String, Object>> getSuperTweet(@PathVariable Long tweetId,
+                                                             @RequestHeader("TK") String token) {
+        var res = pageService.getSuperTweet(tweetId, token);
         return ResponseHandler.wrapSuccessResponse(res);
     }
 }
