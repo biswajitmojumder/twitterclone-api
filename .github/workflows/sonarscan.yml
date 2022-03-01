@@ -1,0 +1,31 @@
+
+name: SonarCloud Scan
+
+#
+# Documentation:
+# https://help.github.com/en/articles/workflow-syntax-for-github-actions
+#
+
+#############################
+# Start the job on all push #
+#############################
+on:
+  push:
+    branches:
+      - "master"
+
+###############
+# Set the Job #
+###############
+jobs:
+  sonarCloudTrigger:
+    name: SonarCloud Trigger
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v2
+      - name: Analyze with SonarCloud
+        uses: sonarsource/sonarcloud-github-action@v1.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GHTOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
