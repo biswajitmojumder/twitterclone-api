@@ -15,8 +15,6 @@
 	<description>Twitter Clone API</description>
 	<properties>
 		<java.version>11</java.version>
-	</properties>
-	<properties>
 		<sonar.organization>mrkresnofatih</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
