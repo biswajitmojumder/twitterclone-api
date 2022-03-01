@@ -1,6 +1,7 @@
 package com.fattech.twitterclone.repos;
 
 import com.fattech.twitterclone.models.Tweet;
+import com.fattech.twitterclone.models.dtos.TweetSuperDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -175,5 +176,21 @@ public class TweetRepo implements EntityDAO<Tweet>, TweetDAO {
                 "ORDER BY createdAt DESC LIMIT %d",
                 IN_PLAYERIDS_SQL, olderThan, limit);
         return jdbcTemplate.queryForList(QUERY, Long.class);
+    }
+
+    @Override
+    public TweetSuperDto getSuperTweet(Long tweetId) {
+        String SQL = String.format("SELECT\n" +
+                "SUM(IF(replyOf = %d, 1, 0)) AS numOfReplies,\n" +
+                "SUM(IF(retweetOf = %d, 1, 0)) AS numOfRetweets,\n" +
+                "(SELECT COALESCE((SELECT SUM(IF(tweetId = %d AND reactionType = 'LIKE', 1, 0)) FROM tbl_reactions))) AS numOfLikes,\n" +
+                "tbl_tweets.* FROM tbl_tweets WHERE id = %d", tweetId, tweetId, tweetId, tweetId);
+        return jdbcTemplate.queryForObject(SQL, new BeanPropertyRowMapper<>(TweetSuperDto.class));
+    }
+
+    @Override
+    public List<Tweet> getReplies(Long tweetId) {
+        String SQL = String.format("SELECT * FROM tbl_tweets WHERE replyOf = %d LIMIT 20", tweetId);
+        return jdbcTemplate.query(SQL, new BeanPropertyRowMapper<>(Tweet.class));
     }
 }

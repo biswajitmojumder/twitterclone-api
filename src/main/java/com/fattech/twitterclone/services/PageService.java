@@ -1,19 +1,22 @@
 package com.fattech.twitterclone.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fattech.twitterclone.constants.ErrorCodes;
 import com.fattech.twitterclone.models.*;
 import com.fattech.twitterclone.models.dtos.PlayerGetDto;
 import com.fattech.twitterclone.models.dtos.TweetGetDto;
+import com.fattech.twitterclone.models.dtos.TweetSuperDto;
+import com.fattech.twitterclone.models.dtos.TweetSuperGetDto;
 import com.fattech.twitterclone.repos.*;
 import com.fattech.twitterclone.utils.AccessTokenUtils;
+import com.fattech.twitterclone.utils.AppException;
 import com.fattech.twitterclone.utils.DateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -140,5 +143,63 @@ public class PageService {
         var result = new ResponsePayload();
         result.setPlayers(playersMap);
         return result;
+    }
+
+    public ResponsePayload getSuperTweet(Long tweetId, String token) {
+        Long playerId = Long.valueOf(accessTokenUtils.extractPlayerId(token));
+        Tweet foundTweet = tweetRepo.getById(tweetId);
+
+        if (!Objects.isNull(foundTweet)) {
+            TweetSuperDto foundSuperTweet = tweetRepo.getSuperTweet(tweetId);
+            List<String> tags = tagRepo.getTagNamesByTweetId(tweetId);
+            TweetSuperGetDto foundSuperGetDto = objectMapper.convertValue(foundSuperTweet, TweetSuperGetDto.class);
+            TweetGetDto foundGetDto = objectMapper.convertValue(foundTweet, TweetGetDto.class);
+            foundSuperGetDto.setTags(tags);
+            foundGetDto.setTags(tags);
+
+            var result = new ResponsePayload();
+            Map<Long, TweetSuperGetDto> superTweets = new HashMap<>();
+            Map<Long, TweetGetDto> tweets = new HashMap<>();
+            tweets.put(tweetId, foundGetDto);
+            superTweets.put(tweetId, foundSuperGetDto);
+            result.setSuperTweets(superTweets);
+            result.setTweets(tweets);
+
+            List<Tweet> listOfReplies = tweetRepo.getReplies(tweetId);
+            List<TweetGetDto> listOfRepliesDto = listOfReplies.stream().map((reply) -> {
+                TweetGetDto replyDto = objectMapper.convertValue(reply, TweetGetDto.class);
+                List<String> replyTags = tagRepo.getTagNamesByTweetId(reply.getId());
+                replyDto.setTags(replyTags);
+                return replyDto;
+            }).collect(Collectors.toList());
+            listOfRepliesDto.forEach((replyDto) -> {
+                tweets.put(replyDto.getId(), replyDto);
+            });
+
+            List<Long> playerIdsFromReplies = listOfReplies
+                    .stream().map(Tweet::getPlayerId)
+                    .collect(Collectors.toList());
+            playerIdsFromReplies.add(foundTweet.getPlayerId());
+            List<PlayerGetDto> listOfPlayersFromRepo = playerRepo.getByPlayerIds(playerIdsFromReplies);
+            Map<Long, PlayerGetDto> players = listOfPlayersFromRepo
+                    .stream().collect(Collectors.toMap(PlayerGetDto::getId, Function.identity()));
+            List<Follow> followList = followRepo.getByPlayerIdsFollowerId(playerIdsFromReplies, playerId);
+            Map<Long, Follow> follows = followList
+                    .stream().collect(Collectors.toMap(Follow::getPlayerId, Function.identity()));
+
+            List<Long> tweetIds = new ArrayList<>(tweets.keySet());
+            List<Reaction> listOfReactions = reactionRepo.getByTweetIdsPlayerId(tweetIds, playerId);
+            Map<Long, Reaction> reactions = listOfReactions
+                    .stream().collect(Collectors.toMap(Reaction::getTweetId, Function.identity()));
+
+            result.setPlayers(players);
+            result.setReactions(reactions);
+            result.setFollows(follows);
+            result.setFeedIds(Collections.EMPTY_MAP);
+
+            return result;
+        }
+        logger.warn(String.format("Tweet with id %d doesn't exist, will throw badRequest error!", tweetId));
+        throw new AppException(ErrorCodes.BAD_REQUEST);
     }
 }
